@@ -1,2 +1,2 @@
 # ResMod
-Resiience as a Moderator
+This is the GitHub for a project called "The Role of Resilience in Sexual Assault Revictimization" (ResMod, for short). This project was originally conceived and created by Sharon S. Wang for a program milestone in the University of Washington's Psychology PhD program.
