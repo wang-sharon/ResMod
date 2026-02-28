@@ -1,0 +1,33 @@
+{
+    "id": "ADA84055",
+    "path": "~/Downloads/Final_Analyses/Power-analysis.Rmd",
+    "project_path": "Power-analysis.Rmd",
+    "type": "r_markdown",
+    "hash": "2219515201",
+    "contents": "",
+    "dirty": false,
+    "created": 1738784768868.0,
+    "source_on_save": false,
+    "relative_order": 6,
+    "properties": {
+        "tempName": "Untitled2",
+        "source_window_id": "",
+        "Source": "Source",
+        "cursorPosition": "7,22",
+        "scrollLine": "0",
+        "last_setup_crc32": "",
+        "rmdVisualMode": "false",
+        "rmdVisualWrapConfigured": "true",
+        "docOutlineVisible": "0",
+        "rmdVisualCollapsedChunks": "",
+        "rmdVisualModeLocation": "2341:1227.199951171875"
+    },
+    "folds": "",
+    "lastKnownWriteTime": 1738785639,
+    "encoding": "UTF-8",
+    "collab_server": "",
+    "source_window": "",
+    "last_content_update": 1738785639199,
+    "read_only": false,
+    "read_only_alternatives": []
+}

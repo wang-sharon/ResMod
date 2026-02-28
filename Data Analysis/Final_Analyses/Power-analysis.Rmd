@@ -1,0 +1,96 @@
+---
+title: "Power_analysis"
+author: "Sharon Wang"
+date: "2025-02-05"
+output: pdf_document
+---
+
+```{r setup, include=T}
+knitr::opts_chunk$set(echo = TRUE, warning = F, message = F)
+# Load necessary packages
+library(MASS)  # For glm.nb()
+library(dplyr) # For data handling
+
+# Set parameters
+set.seed(123)
+n_sim <- 1000    # Number of simulations per sample size
+alpha <- 0.05    # Significance level
+power_target <- 0.80  # Desired power
+
+# Start with a reasonable sample size
+n <- 100  
+power_estimate <- 0  
+
+# Define effect sizes (use small-moderate values)
+beta_0 <- 1.0    
+beta_1 <- 0.30   
+beta_2 <- 0.30   
+beta_3 <- 0.30   
+beta_4 <- 0.15   
+beta_5 <- 0.15   
+beta_6 <- 0.15   
+beta_7 <- 0.25   
+
+```
+
+```{r message=FALSE, warning=FALSE, include=FALSE}
+while (power_estimate < power_target) {
+  sig_count <- 0  # Count significant results
+  
+  for (i in 1:n_sim) {
+    # Generate predictor variables (normal distribution)
+    X1 <- rnorm(n, mean = 0, sd = 1)
+    X2 <- rnorm(n, mean = 0, sd = 1)
+    X3 <- rnorm(n, mean = 0, sd = 1)
+    
+    # Compute log-mean for negative binomial
+    log_mu <- beta_0 + beta_1*X1 + beta_2*X2 + beta_3*X3 + 
+      beta_4*(X1*X2) + beta_5*(X1*X3) + beta_6*(X2*X3) + 
+      beta_7*(X1*X2*X3)
+    
+    # Ensure no extreme values
+    log_mu <- pmax(pmin(log_mu, 3), -3)  # Bound values between -5 and 5
+    
+    # Generate negative binomial outcome variable
+    Y <- tryCatch({
+      rnbinom(n, size = 10, mu = exp(log_mu))
+    }, error = function(e) NA)  # Catch errors and return NA
+    
+    # Skip iteration if Y contains NAs
+    if (any(is.na(Y))) next  
+    
+    # Fit negative binomial model
+    model <- tryCatch({
+      glm.nb(Y ~ X1 * X2 * X3, control = glm.control(maxit = 100))
+    }, error = function(e) NULL)  
+    
+    # Skip if model didn't fit
+    if (is.null(model)) next  
+    
+    # Check p-value for the three-way interaction
+    p_value <- summary(model)$coefficients["X1:X2:X3", 4]
+    
+    # Count significant results
+    if (!is.na(p_value) && p_value < alpha) {
+      sig_count <- sig_count + 1
+    }
+  }
+  
+  # Compute power
+  power_estimate <- sig_count / n_sim
+  print(paste("Sample size:", n, "Estimated Power:", round(power_estimate, 3)))
+  
+  # Increase sample size if power is too low
+  if (power_estimate < power_target) {
+    n <- n + 10
+  }
+}
+
+```
+
+```{r echo=FALSE}
+
+# Final result
+print(paste("Minimum required sample size for 80% power:", n))
+```
+

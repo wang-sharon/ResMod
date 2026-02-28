@@ -1,0 +1,516 @@
+---
+title: "ResMod Results"
+output: html_document
+---
+
+```{r setup, include=FALSE, echo=FALSE}
+knitr::opts_chunk$set(echo = FALSE)
+
+### CLEANING
+
+## clear environment
+rm(list = ls())
+
+# set working directory
+setwd("~/OneDrive - UW/ResMod (Second Year Project)/Data Analysis")
+
+## load packages
+library(haven) # reads spss files
+library(knitr) # view subset of dataframe
+library(psych) # descriptives
+# library(dplyr) # mutate/reverse code
+
+## load raw spss
+raw_data <- read_sav("Data/Fresh2_Main_Study_clean-baseline-inlab-combined updated current (9.3.19).sav")
+
+# Reorganize Variables ----------------------------------------------------
+
+## isolate variables of interest (VOI)
+# covariates <- c("ASASep_HR", "csasev")
+
+PTSD <- c("pcltotV", "ptsd01", "ptsd02", "ptsd03", "ptsd04", "ptsd05", "ptsd06",
+          "ptsd07", "ptsd08", "ptsd09", "ptsd10", "ptsd11", "ptsd12", "ptsd13", 
+          "ptsd14", "ptsd15", "ptsd16", "ptsd17", "ptsd18", "ptsd19","ptsd20")
+
+# make baseline PTSD = 0
+raw_data$PTSD <- raw_data$pcltotV - 20
+
+# Make NA where PTSD < 0
+raw_data$PTSD <- replace(raw_data$PTSD, raw_data$PTSD < 0, NA)
+
+AdolSA <- c("oral_1__14", "oral_2__14", "oral_3__14", "oral_4__14", 
+            "oral_5__14", "vagina_1__14", "vagina_2__14","vagina_3__14", 
+            "vagina_4__14", "vagina_5__14","anal_1__14", "anal_2__14", 
+            "anal_3__14", "anal_4__14", "anal_5__14", "attoral_1__14", 
+            "attoral_2__14", "attoral_3__14", "attoral_4__14", "attoral_5__14", 
+            "attvag_1__14","attvag_2__14", "attvag_3__14", "attvag_4__14", 
+            "attvag_5__14", "attanal_1__14", "attanal_2__14","attanal_3__14", 
+            "attanal_4__14", "attanal_5__14")
+AdultSA <- c("oral_1__18", "oral_2__18", "oral_3__18", "oral_4__18", 
+             "oral_5__18", "vagina_1__18", "vagina_2__18","vagina_3__18", 
+             "vagina_4__18", "vagina_5__18","anal_1__18", "anal_2__18", 
+             "anal_3__18", "anal_4__18", "anal_5__18", "attoral_1__18", 
+             "attoral_2__18", "attoral_3__18", "attoral_4__18", "attoral_5__18",
+             "attvag_1__18","attvag_2__18", "attvag_3__18", "attvag_4__18",
+             "attvag_5__18", "attanal_1__18", "attanal_2__18","attanal_3__18", 
+             "attanal_4__18", "attanal_5__18")
+
+DERS <- c("ders01", "ders02", "ders03", "ders04", "ders05", "ders06", "ders07", 
+          "ders08", "ders09", "ders10", "ders11", "ders12", "ders13", "ders14", 
+          "ders15", "ders16", "ders17", "ders18", "ders19", "ders20", "ders21", 
+          "ders22", "ders23", "ders24", "ders25", "ders26", "ders27", "ders28", 
+          "ders29", "ders30", "ders31", "ders32", "ders33", "ders34", "ders35", 
+          "ders36", "ders01r", "ders02r", "ders06r", "ders07r", "ders08r",
+          "ders10r", "ders17r", "ders20r", "ders22r", "ders24r")
+# DERS_factors <- c("DERS_NonAccept", "DERS_Goal", "DERS_IMPULSE", "DERS_AWARE",  
+  #                "DERS_STRATEGIES", "DERS_CLARITY", "DERS_TotalScore")
+
+# reverse DERS
+raw_data$ERS <- -raw_data$DERS_TotalScore
+
+SMQ <- c("smq01", "smq02", "smq03", "smq04", "smq05", "smq06", "smq07", "smq08",
+         "smq09", "smq10", "smq11", "smq12", "smq13", "smq14", "smq15", "smq16",
+         "smq02r", "smq03r","smq06r", "smq08r", "smq12r", "smq13r", "smq14r", 
+         "smq16r")
+
+# # original coding for CSI items is wrong
+# CSI <- c("csi01", "csi02", "csi03", "csi04", "csi05", "csi06", "csi07", "csi08",
+#          "csi09", "csi10", "csi11", "csi12", "csi13", "csi14", "csi15", "csi16",
+#          "csi17", "csi18", "csi19", "csi20", "csi21", "csi22", "csi23", "csi24", 
+#          "csi25", "csi26", "csi27", "csi28", "csi29", "csi30", "csi31", "csi32", 
+#          "csi33")
+# CSI_avoidance <- c("csi04", "csi06", "csi10", "csi13", "csi18", "csi21", "csi22",
+#                    "csi26", "csi27", "csi28", "csi30")
+# 
+# reversed_items <- reverse.code(keys = rep(-1, length(CSI_avoidance)),
+#                                items = raw_data[, CSI_avoidance],
+#                                mini = 1, 
+#                                maxi = 3)  
+# 
+# names(CSI_avoidance_reversed)[names(CSI_avoidance_reversed) %in% CSI_avoidance] <- paste0(CSI_avoidance, "r")
+# 
+# # CSI_factors <- c("CSI_ProbSolving", "CSI_SocialSupport", "CSI_Avoidance")
+# 
+# raw_data$CSI_Total <- rowSums(raw_data[, c("csi01", "csi02", "csi03", "csi04", 
+#                                            "csi05", "csi06", "csi07", "csi08", 
+#                                            "csi09", "csi10", "csi11", "csi12", 
+#                                            "csi13", "csi14", "csi15", "csi16", 
+#                                            "csi17", "csi18", "csi19", "csi20", 
+#                                            "csi21", "csi22", "csi23", "csi24", 
+#                                            "csi25", "csi26", "csi27", "csi28", 
+#                                            "csi29", "csi30", "csi31", "csi32", 
+#                                            "csi33")])
+
+# dataframe with isolated variables of interest
+VOI_data <- raw_data[c("ID", "PTSD", "csayn", AdolSA, AdultSA, "ERS",
+                       "SMQ_tot")]
+
+# Re-org SA ---------------------------------------------------------------
+
+# first sum across columns
+VOI_data$adolSAtot <- rowSums(VOI_data[,AdolSA]) # total # adolescent SA
+VOI_data$adultSAtot <- rowSums(VOI_data[,AdultSA]) # total # adult SA
+
+# dichotomous variables
+# dichotomized any adolescent (14-18) SA, by any tactic, attempted or completed
+VOI_data$adolSAyn <- ifelse(VOI_data$adolSAtot == 0, 0, 1)  
+# dichotomized any adult SA (>18), by any tactic, attempted or completed
+VOI_data$adultSAyn <- ifelse(VOI_data$adultSAtot == 0, 0, 1)
+# ditchotomized ASA = adolescent or adulthood
+VOI_data$ASA <- ifelse(VOI_data$adolSAyn == 1 | VOI_data$adultSAyn == 1, 1, 0)
+
+# needed only for graphing purposes
+# CSA only
+VOI_data$CSA_only <- ifelse(VOI_data$csayn == 1 & VOI_data$ASA == 0, 1, 0)
+
+# ASA only
+VOI_data$ASA_only <- ifelse(VOI_data$csayn == 0 & VOI_data$ASA == 1, 1, 0)
+
+# CSA + ASA
+VOI_data$CSA_ASA <- ifelse(VOI_data$csayn == 1 & VOI_data$ASA == 1, 1, 0)
+
+# composite variable
+VOI_data$vic <- ifelse(VOI_data$CSA_only == 1, "CSA_only",
+                       ifelse(VOI_data$ASA_only == 1, "ASA_only",
+                              ifelse(VOI_data$CSA_ASA == 1, "CSA_ASA", NA)))
+
+vic_variables <- c("CSA_only", "ASA_only", "CSA_ASA", "ASA", "csayn")
+
+# Final data ---------------------------------------------------------
+
+final_outcomes <- c("PTSD", "ERS", "SMQ_tot")
+
+clean_data <- VOI_data[c("ID", final_outcomes, "vic", vic_variables)]
+clean_data <- subset(clean_data, ASA == 1 | CSA_ASA == 1 | csayn == 1)
+
+final_descriptives <- describe(clean_data[final_outcomes])
+
+## correlations
+
+# optional - corr values also generated below in correlation_results
+# final_correlations <- cor(clean_data[final_main], use = "complete.obs")
+
+correlation_variables <- c("PTSD", "ERS", "SMQ_tot")
+correlation_results <- data.frame(Variable1 = character(), 
+                                  Variable2 = character(), 
+                                  Correlation = numeric(), P_Value = numeric(), 
+                                  stringsAsFactors = FALSE)
+
+for (var1 in 1:(length(correlation_variables) - 1)) {
+  for (var2 in (var1 + 1):length(correlation_variables)) {
+    # Calculate correlation and p-value
+    result <- cor.test(clean_data[[correlation_variables[var1]]], 
+                       clean_data[[correlation_variables[var2]]])
+    
+    # Store results in the data frame
+    correlation_results <- rbind(correlation_results, data.frame(
+      Variable1 = correlation_variables[var1],
+      Variable2 = correlation_variables[var2],
+      Correlation = result$estimate,
+      P_Value = result$p.value
+    ))
+  }
+}
+
+### ANALYSES
+
+# load packages
+library(MASS) #glm.nb
+library(Rmisc) # to generate data summary, summarySE
+library(sjPlot) # to plot moderation graphs
+library(ggplot2)
+library(stats)
+library(emmeans) # pairwise comparisons
+
+# finalize operationalization
+
+# PTSD_CSAonly <- VOI_data$PTSD[VOI_data$vic == "CSA_only"]
+# PTSD_ASAonly <- VOI_data$PTSD[VOI_data$vic == "ASA_only"]
+# PTSD_CSA_ASA <- VOI_data$PTSD[VOI_data$vic == "CSA_ASA"]
+# t.test(PTSD_ASAonly, PTSD_CSA_ASA)
+## there's a sig difference between PTSD scores of CSA only, ASA only, and CSA +
+## ASA - probably shouldn't lump together
+
+# Aim 1 -------------------------------------------------------------------
+
+# organize vic variable
+clean_data$vic <- as.factor(clean_data$vic)
+clean_data$vic <- factor(clean_data$vic, levels = c("CSA_only", "ASA_only", "CSA_ASA"))
+
+# THE regression model - run this! Works only if you've subsetted dataset to
+# exclude no vic
+Model1 <- glm.nb(PTSD ~ vic, data = clean_data)
+# can infer that if ASA = 0 and CSA_ASA = 0 then reference group is CSA_only
+
+## i haven't included covariates here because i'm not sure that is needed, 
+## conceptually. also b/c when i run it with covariates, some sort of 
+## multicollinearity problem occurs
+
+summary(Model1)
+confint(Model1) # confidence intervals
+
+# pairwise comparisons
+pairs(emmeans(Model1, ~ vic))
+
+# graph
+data_summary <- summarySE(clean_data[!is.na(clean_data$vic), ], 
+                          measurevar = "PTSD", 
+                          groupvars = "vic", na.rm = T)
+
+ggplot(data_summary, aes(x = vic, y = PTSD)) +
+  geom_bar(position = position_dodge(), stat="identity", fill="gray") +
+  geom_errorbar(aes(ymin = PTSD-se, ymax=PTSD+se), width=.2) +
+  theme(panel.background = element_rect(fill='transparent'),
+        plot.background = element_rect(fill='transparent', color=NA)) +
+  ylab("PTSS Severity") +
+  xlab("Victimization") +
+  coord_cartesian(ylim= c(min(data_summary$PTSD-1.5*data_summary$se),
+                          max(data_summary$PTSD+1.5*data_summary$se))) 
+
+# Aim 2 -------------------------------------------------------------------
+
+# mean center
+clean_data$mcERS <- as.numeric(scale(clean_data$ERS, scale = F))
+clean_data$mcSMQ <- as.numeric(scale(clean_data$SMQ_tot, scale = F))
+
+## Emotion regulation ------------------------------------------------------
+
+# # create interaction terms
+# clean_data$ASA_mcERS <- clean_data$ASA * clean_data$mcERS
+# clean_data$CSA_ASA_mcERS <- clean_data$CSA_ASA * clean_data$mcERS
+
+# option 1
+Mod.Model1 <- glm.nb(PTSD ~ vic + mcERS + vic * mcERS, data = clean_data)
+
+summary(Mod.Model1)
+confint(Mod.Model1) # confidence intervals
+
+# pairwise comparisons
+pairs(emmeans(Mod.Model1, ~ vic))
+
+# graphs
+data_summary2 <- summarySE(clean_data[!is.na(clean_data$vic), ], 
+                          measurevar = "mcERS", 
+                          groupvars = "vic", na.rm = T)
+
+ggplot(data_summary2, aes(x = vic, y = mcERS)) +
+  geom_bar(position = position_dodge(), stat="identity", fill="gray") +
+  geom_errorbar(aes(ymin = mcERS-se, ymax=mcERS+se), width=.2) +
+  theme(panel.background = element_rect(fill='transparent'),
+        plot.background = element_rect(fill='transparent', color=NA)) +
+  ylab("mcERS") +
+  xlab("Victimization")
+
+# moderation plot
+plot_model(Mod.Model1, type = "int", terms = c("mcERS", "ASA", "CSA_ASA"))
+
+# # descriptives
+# x_min <- min(clean_data$vic, na.rm = T)
+# x_max <- max(clean_data$vic, na.rm = T)
+# 
+# # plot: traditional, -1 SD, mean, +1 SD
+# sd_mcERS <- sd(clean_data$mcERS, na.rm = T)
+# Mod.Model1_plot <- probe2WayMC(Mod.Model1, 
+#                                nameX = c("vic", "mcERS", "vic_mcERS"), 
+#                                nameY = "PTSD", 
+#                                modVar = "mcERS", 
+#                                valProbe = c(-sd_mcERS, 0, sd_mcERS))
+# plotProbe(Mod.Model1_plot, 
+#           xlim = c(x_min, x_max),
+#           xlab = "Revictimization", 
+#           ylab = "PTSS Severity", 
+#           legendArgs = list(x = "topleft"))
+
+
+## Mindfulness -------------------------------------------------------------
+
+Mod.Model2 <- glm.nb(PTSD ~ vic + mcSMQ + vic * mcSMQ, data = clean_data)
+summary(Mod.Model2)
+confint(Mod.Model2) # confidence intervals
+
+# graphs
+data_summary3 <- summarySE(clean_data[!is.na(clean_data$vic), ], 
+                           measurevar = "mcSMQ", 
+                           groupvars = "vic", na.rm = T)
+
+ggplot(data_summary3, aes(x = vic, y = mcSMQ)) +
+  geom_bar(position = position_dodge(), stat="identity", fill="gray") +
+  geom_errorbar(aes(ymin = mcSMQ-se, ymax=mcSMQ+se), width=.2) +
+  theme(panel.background = element_rect(fill='transparent'),
+        plot.background = element_rect(fill='transparent', color=NA)) +
+  ylab("mcSMQ") +
+  xlab("Victimization")
+
+# moderation plot
+plot_model(Mod.Model2, type = "int", terms = c("mcSMQ", "ASA", "CSA_ASA"))
+
+
+## Coping strategies -------------------------------------------------------
+# 
+# # create interaction terms
+# clean_data$csayn_mcCSI <- clean_data$csayn * clean_data$mcCSI
+# clean_data$ASA_mcCSI <- clean_data$ASA * clean_data$mcCSI
+# clean_data$csayn_ASA_mcCSI <- clean_data$csayn * clean_data$ASA * 
+#   clean_data$mcCSI
+# 
+# Mod.Model3 <- '
+#   # Main effects
+#   PTSD ~ csayn + ASA + mcCSI
+#   
+#   # Two-way interaction effects
+#   PTSD ~ csayn_mcCSI + ASA_mcCSI + csayn_ASA
+#   
+#   # Three-way interaction effect
+#   PTSD ~ csayn_ASA_mcCSI
+# '
+# 
+# Mod.Model3_fit <- sem(Mod.Model3, data = clean_data, estimator = "MLR", 
+#                       missing = "ML")
+# summary(Mod.Model3_fit)
+# parameterestimates(Mod.Model3_fit) # confidence intervals
+# 
+# data_summary4 <- summarySE(clean_data[!is.na(clean_data$vic), ], 
+#                            measurevar = "mcCSI", 
+#                            groupvars = "vic", na.rm = T)
+# 
+# ggplot(data_summary4, aes(x = vic, y = mcCSI)) +
+#   geom_bar(position = position_dodge(), stat="identity", fill="gray") +
+#   geom_errorbar(aes(ymin = mcCSI-se, ymax=mcCSI+se), width=.2) +
+#   theme(panel.background = element_rect(fill='transparent'),
+#         plot.background = element_rect(fill='transparent', color=NA)) +
+#   ylab("mcCSI") +
+#   xlab("Victimization")
+
+
+# Aim 3 -------------------------------------------------------------------
+Main.Model <- glm.nb(PTSD ~ vic + mcERS + mcSMQ, data = clean_data)
+summary(Main.Model)
+pairs(emmeans(Main.Model, ~ vic))
+
+Cumul.Model <- glm.nb(PTSD ~ vic + mcERS + mcSMQ + vic * mcERS * mcSMQ, 
+                      data = clean_data)
+summary(Cumul.Model)
+
+# moderation plot
+plot_model(Cumul.Model, type = "int", terms = c("mcSMQ", "mcERS", "ASA",
+                                                "CSA_ASA"))
+```
+
+# Aim 1: relationship between victimization type and PTSS severity
+
+Victimization = CSA only, ASA (adolescent or adult) only, CSA + ASA
+
+PTSS severity = PCL-5 score (0-80)
+
+Negative binomial regression results:
+
+```{r}
+kable(summary(Model1)$coefficients, digits = 3, caption = "Coefficients Table
+      for Aim 1")
+```
+
+95% confidence intervals:
+
+```{r, message=FALSE}
+knitr::kable(confint(Model1), digits = 3)
+
+```
+
+Pairwise comparisons:
+
+```{r}
+
+kable(pairs(emmeans(Model1, ~ vic)), digits = 3)
+```
+
+```{r}
+ggplot(data_summary, aes(x = vic, y = PTSD)) +
+  geom_bar(position = position_dodge(), stat="identity", fill="gray") +
+  geom_errorbar(aes(ymin = PTSD-se, ymax=PTSD+se), width=.2) +
+  theme(panel.background = element_rect(fill='transparent'),
+        plot.background = element_rect(fill='transparent', color=NA)) +
+  ylab("PTSS Severity") +
+  xlab("Victimization") +
+  coord_cartesian(ylim= c(min(data_summary$PTSD-1.5*data_summary$se),
+                          max(data_summary$PTSD+1.5*data_summary$se))) 
+```
+
+> *Summary:*
+>
+> 1.  Experiencing ASA only (compared to experiencing CSA only) is associated with a 38.8% increase in PTSS severity.
+>
+> 2.  Experiencing revictimization (compared to CSA only) is associated with a 91.9% increase in PTSS severity while experiencing revictimization (compared to ASA only) is associated with a 38.3% increase in PTSS severity.
+
+------------------------------------------------------------------------
+
+# Aim 2: moderation analyses of resilience variables
+
+## Aim 2a: Emotion regulation
+
+Emotion regulation: reverse scoring of Difficulties in Emotion Regulation Strategies
+
+Negative binomial regression results:
+
+```{r}
+kable(summary(Mod.Model1)$coefficients, digits = 3, caption = "Coefficients Table
+      for Aim 2a")
+```
+
+95% confidence intervals:
+
+```{r, message=FALSE}
+knitr::kable(confint(Mod.Model1), digits = 3)
+```
+
+Moderation plot:
+
+```{r}
+plot_model(Mod.Model1, type = "int", terms = c("mcERS", "ASA", "CSA_ASA"))
+```
+
+Pairwise comparisons:
+```{r}
+Main.Model_ERS <- glm.nb(PTSD ~ vic + mcERS, data = clean_data)
+kable(pairs(emmeans(Main.Model_ERS, ~ vic)), digits = 3)
+```
+
+> *Summary:*
+>
+> 1.  There was no interactive effect between emotion regulation and victimization on PTSS severity, meaning the effect of emotion regulation does not differ by victimization type.
+>
+> 2.  There was a significant main effect of emotion regulation on PTSS severity such that, with a one-unit increase in emotion regulation, there was a 1.4% decrease in PTSS severity.
+>
+> 3.  When controlling for emotion regulation, there remain significant differences in PTSS severity between CSA only and CSA + ASA. Specifically, individuals who experienced CSA + ASA reported 70.2% greater PTSS severity compared to individuals experiencing CSA only, holding emotion regulation constant.
+
+## Aim 2b: Mindfulness
+
+Mindfulness: Southampton Mindfulness Questionnaire
+
+Negative binomial regression results:
+
+```{r}
+kable(summary(Mod.Model2)$coefficients, digits = 3, caption = "Coefficients
+      Table for Aim 2b")
+```
+
+95% confidence intervals:
+
+```{r, message=FALSE}
+knitr::kable(confint(Mod.Model2), digits = 3)
+```
+
+Moderation plot:
+
+```{r}
+plot_model(Mod.Model2, type = "int", terms = c("mcSMQ", "ASA", "CSA_ASA"))
+
+```
+
+> *Summary:*
+>
+> 1.  There was no interactive effect between mindfulness and victimization on PTSS, meaning the effect of mindfulness does not differ based on the type of victimization experienced.
+>
+> 2.  There was also no main effect of mindfulness on PTSS severity, meaning mindfulness does not have a significant effect on PTSS severity.
+
+# Aim 3: cumulative resilience
+
+3-way interaction between victimization, emotion regulation, and mindfulness
+
+Negative binomial regression results:
+
+```{r}
+kable(summary(Cumul.Model)$coefficients, digits = 3, caption = "Coefficients
+      Table for Aim 3")
+```
+
+95% confidence intervals:
+
+```{r, message=FALSE}
+kable(confint(Cumul.Model))
+```
+
+```{r, message=FALSE}
+plots <- plot_model(Cumul.Model, type = "int", terms = c("mcSMQ", "mcERS", "ASA",
+                                                "CSA_ASA"))
+
+plots[[4]]
+```
+
+Main effects only:
+
+```{r}
+kable(summary(Main.Model)$coefficients, digits = 3, caption = "Coefficients
+      Table for Aim 3 Main Effects")
+```
+
+```{r}
+kable(pairs(emmeans(Main.Model, ~ vic)), digits = 3)
+```
+
+> *Summary:*
+>
+> 1.  There was no interactive effect for cumulative resilience (emotion regulation + mindfulness), meaning the effect of these resilience factors does not differ by victimization type.
+>
+> 2.  There was a significant main effect for emotion regulation, such that with a one-unit increase in emotion regulation, there was a 1.3% decrease in PTSS severity, holding all else constant. 
+>
+> 3. When controlling for emotion regulation and mindfulness, there remain significant differences in PTSS severity between CSA only and CSA + ASA. Specifically, individuals who experienced CSA + ASA reported 69.0% greater PTSS severity compared to individuals experiencing CSA only, holding resilience factors constant.
