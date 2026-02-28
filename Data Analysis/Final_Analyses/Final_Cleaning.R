@@ -29,14 +29,13 @@ PTSD <- c("pcltotV", "ptsd01", "ptsd02", "ptsd03", "ptsd04", "ptsd05", "ptsd06",
           "ptsd07", "ptsd08", "ptsd09", "ptsd10", "ptsd11", "ptsd12", "ptsd13", 
           "ptsd14", "ptsd15", "ptsd16", "ptsd17", "ptsd18", "ptsd19","ptsd20")
 
-# make baseline PTSD = 0
-raw_data$PTSD <- raw_data$pcltotV - 20
-
-# Make NA where PTSD < 0
-raw_data$PTSD <- replace(raw_data$PTSD, raw_data$PTSD < 0, NA)
-
-# remove under 21
-raw_data <- subset(raw_data, age > 20)
+# Fix PTSD scores
+raw_data <- raw_data %>% 
+  mutate(
+    PTSD = pcltotV - 20, # make baseline = 0
+    PTSD = ifelse(PTSD < 0, NA_real_, PTSD) # remove incomplete obs
+  ) %>% 
+  filter(age > 20) # remove invalid participants based on age
 
 
 ## SA ----------------------------------------------------------------------
@@ -133,11 +132,12 @@ VOI_data <- raw_data[c("ID", "PTSD", "csayn", AdolSA, AdultSA, "ERS",
 # Re-org SA ---------------------------------------------------------------
 
 # Create a variable indicating any adolescent or adult SA
-VOI_data$ASA <- apply(VOI_data[, AdolSA], 1, function(x) any(x == 1, na.rm = TRUE)) |
-  apply(VOI_data[, AdultSA], 1, function(x) any(x == 1, na.rm = TRUE))
-
-# Convert logical TRUE/FALSE to numeric 1/0
-VOI_data$ASA <- as.numeric(VOI_data$ASA)
+VOI_data <- VOI_data %>% 
+  mutate(
+    ASA = apply(VOI_data[, AdolSA], 1, function(x) any(x == 1, na.rm = TRUE)) |
+      apply(VOI_data[, AdultSA], 1, function(x) any(x == 1, na.rm = TRUE)), 
+    ASA = as.numeric(ASA) # convert to numeric
+  )
 
 # # first sum across columns
 # VOI_data$adolSAtot <- rowSums(VOI_data[,AdolSA]) # total # adolescent SA
@@ -151,20 +151,16 @@ VOI_data$ASA <- as.numeric(VOI_data$ASA)
 # # ditchotomized ASA = adolescent or adulthood
 # VOI_data$ASA <- ifelse(VOI_data$adolSAyn == 1 | VOI_data$adultSAyn == 1, 1, 0)
 
-# needed only for graphing purposes
-# CSA only
-VOI_data$CSA_only <- ifelse(VOI_data$csayn == 1 & VOI_data$ASA == 0, 1, 0)
-
-# ASA only
-VOI_data$ASA_only <- ifelse(VOI_data$csayn == 0 & VOI_data$ASA == 1, 1, 0)
-
-# CSA + ASA
-VOI_data$CSA_ASA <- ifelse(VOI_data$csayn == 1 & VOI_data$ASA == 1, 1, 0)
-
-# composite variable
-VOI_data$vic <- ifelse(VOI_data$CSA_only == 1, "CSA_only",
-                       ifelse(VOI_data$ASA_only == 1, "ASA_only",
-                              ifelse(VOI_data$CSA_ASA == 1, "CSA_ASA", NA)))
+# Create a composite variable
+VOI_data <- VOI_data %>% mutate(
+  CSA_only = ifelse(csayn == 1 & ASA == 0, 1, 0),
+  ASA_only = ifelse(csayn == 0 & ASA == 1, 1, 0),
+  CSA_ASA = ifelse(csayn == 1 & ASA == 1, 1, 0),
+  vic = ifelse(CSA_only == 1, "CSA only",
+               ifelse(ASA_only == 1, "ASA only", 
+                      ifelse(CSA_ASA == 1, "CSA + ASA", NA))),
+  vic = factor(vic, c("CSA only", "ASA only", "CSA + ASA"))
+)
 
 vic_variables <- c("CSA_only", "ASA_only", "CSA_ASA", "ASA", "csayn")
 
